@@ -1,0 +1,36 @@
+import numpy as np
+import scipy.stats as stats
+import arviz as az
+import matplotlib.pyplot as plt
+
+num_apeluri = 180
+timp_observare = 10
+rata_observata = num_apeluri / timp_observare
+
+alpha_prior = 2
+beta_prior = 1 / rata_observata
+
+alpha_posterior = alpha_prior + num_apeluri
+beta_posterior = beta_prior + timp_observare
+
+posterior_dist = stats.gamma(alpha_posterior, scale=1 / beta_posterior)
+
+hdi_94 = az.hdi(posterior_dist.rvs(10000), hdi_prob=0.94)
+mode_lambda = (alpha_posterior - 1) / beta_posterior
+
+print(f"Rata observată de apeluri pe oră: {rata_observata:.2f}")
+print(f"Parametrii a posteriori pentru distribuția Gamma: α = {alpha_posterior}, β = {beta_posterior}")
+print(f"Intervalul HDI de 94% pentru λ: {hdi_94}")
+print(f"Valoarea cea mai probabilă pentru λ: {mode_lambda:.2f}")
+
+x = np.linspace(0, 2 * mode_lambda, 1000)
+y = posterior_dist.pdf(x)
+plt.plot(x, y, label='Distribuția a posteriori pentru λ')
+plt.axvline(hdi_94[0], color='red', linestyle='--', label=f'94% HDI [{hdi_94[0]:.2f}, {hdi_94[1]:.2f}]')
+plt.axvline(hdi_94[1], color='red', linestyle='--')
+plt.axvline(mode_lambda, color='blue', linestyle='--', label=f'Modulul distribuției ({mode_lambda:.2f})')
+plt.xlabel("Rata λ de apeluri pe oră")
+plt.ylabel("Densitatea de probabilitate")
+plt.legend()
+plt.title("Distribuția a posteriori a ratei λ de apeluri pe oră")
+plt.show()
