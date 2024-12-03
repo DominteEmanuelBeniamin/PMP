@@ -14,12 +14,11 @@ culori = [
 ]
 
 # Citirea gridului
-df = pd.read_csv('grid_culori.csv', header=None)
-grid_culori = df.values.reshape((10, 10))
+df = pd.read_csv('grid_culori.csv')
+grid_culori = df.to_numpy
 
 # Generarea secvenței de culori observate
-# This needs to be specified or generated
-observatii = ['red', 'blue', 'green', 'yellow', 'purple']
+observatii = ######
 
 # Mapare culori -> indecși
 culoare_to_idx = {culoare: idx for idx, culoare in enumerate(culori)}
@@ -40,44 +39,39 @@ for i, j in stari_ascunse:
     vecini = [
         (i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)  # sus, jos, stânga, dreapta
     ]
-    for vecin in vecini:
-        if 0 <= vecin[0] < 10 and 0 <= vecin[1] < 10:
-            transitions[stare_to_idx[(i, j)], stare_to_idx[vecin]] = 1 / len(vecini)
-
-# Normalize the transitions to ensure they sum to 1
-transitions /= transitions.sum(axis=1, keepdims=True)
+    vecini_valizi = [stare_to_idx[(x, y)] for x, y in vecini if 0 <= x < 10 and 0 <= y < 10]
+    ######
 
 # Matrice de emisie
 emissions = np.zeros((numar_stari, len(culori)))
-for i in range(10):
-    for j in range(10):
-        idx = stare_to_idx[(i, j)]
-        color_idx = culoare_to_idx[grid_culori[i, j]]
-        emissions[idx, color_idx] = 1  # Perfect observation model
+######
+  
+# Modelul HMM
 
-# Initialize the model
-model = hmm.MultinomialHMM(n_components=numar_stari)
-model.startprob_ = np.ones(numar_stari) / numar_stari  # Uniform start probability
-model.transmat_ = transitions
-model.emissionprob_ = emissions
+######
 
-# Run the Viterbi algorithm
-logprob, states = model.decode(np.array([observatii_idx]).T, algorithm="viterbi")
-path = [idx_to_stare[state] for state in states]
+# Rulăm algoritmul Viterbi pentru secvența de observații
+######
 
-# Visualization
+# Convertim secvența de stări în poziții din grid
+drum = [idx_to_stare[idx] for idx in secventa_stari]
+
+# Vizualizăm drumul pe grid
 fig, ax = plt.subplots(figsize=(8, 8))
 for i in range(dimensiune_grid[0]):
     for j in range(dimensiune_grid[1]):
-        color = grid_culori[i, j]
-        ax.add_patch(plt.Rectangle((j, dimensiune_grid[0] - i - 1), 1, 1, color=color))
-        ax.text(j + 0.5, dimensiune_grid[0] - i - 0.5, color, 
+        culoare = grid_culori[i, j]
+        ax.add_patch(plt.Rectangle((j, dimensiune_grid[0] - i - 1), 1, 1, color=culoare))
+        ax.text(j + 0.5, dimensiune_grid[0] - i - 0.5, culoare, 
                 color="white", ha="center", va="center", fontsize=8, fontweight="bold")
 
-# Highlight the resulting path
-for idx, (i, j) in enumerate(path):
+# Evidențiem drumul rezultat
+for idx, (i, j) in enumerate(drum):
     ax.add_patch(plt.Circle((j + 0.5, dimensiune_grid[0] - i - 0.5), 0.3, color="black", alpha=0.7))
+    ax.text(j + 0.5, dimensiune_grid[0] - i - 0.5, str(idx + 1), 
+            color="white", ha="center", va="center", fontsize=10, fontweight="bold")
 
+# Setări axă
 ax.set_xlim(0, dimensiune_grid[1])
 ax.set_ylim(0, dimensiune_grid[0])
 ax.set_xticks(range(dimensiune_grid[1]))
